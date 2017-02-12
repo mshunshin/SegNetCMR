@@ -2,15 +2,15 @@
 A [Tensorflow](https://www.tensorflow.org/) implementation of [SegNet](https://mi.eng.cam.ac.uk/projects/segnet/) to segments CMR images
 
 ## Aims
-1) A demonstration of a more complete Tensorflow program including saving state and resuming.
-2) Provide an ready-to-go example of medical segmentation with sufficient training and validation data, in a usable format (PNGs).
+1. A demonstration of a more complete Tensorflow program including saving state and resuming.
+2. Provide an ready-to-go example of medical segmentation with sufficient training and validation data, in a usable format (PNGs).
 
 ## Requirements
 1. Python 3.5: Best to use the [Conda](https://www.continuum.io/downloads) distribution
 2. Tensorflow 0.12
 
 ## Todo
-1) Add code to run on your own data (currently there is only the training code present)
+1. Add code to run on your own data (currently there is only the training code present)
 
 ## Running
 Make sure you have conda and tensorflow installed
@@ -56,11 +56,11 @@ The first two sets of CMRs are included as training data, the last set as test d
 [GitHub Tensorflow unpool thread](https://github.com/tensorflow/tensorflow/issues/2169)
 
 ## Issues and annoyances
-1) The original SegNet uses max_pool_with_argmax, and requires an unpool_with_argmax. Unfortunately, Tensorflow does not provide an unpool_with_argmax. Fortunately there is code in the github thread above to make your own.
-2) This version of unpool_with_argmax runs on the CPU not GPU so is a little slower.
-3) Tensorflow does not provide a CPU version of max_pool_with_argmax, so if you don't have a GPU you are stuck using the maxpool version.
-4) Tensorflow forgot to include a function for gradients for maxpoolwithargmax, so it is included at the bottom of train.py
-5) The name mangling of the Sunnybrook CMR data.
+1. The original SegNet uses max_pool_with_argmax, and requires an unpool_with_argmax. Unfortunately, Tensorflow does not provide an unpool_with_argmax. Fortunately there is code in the github thread above to make your own.
+2. This version of unpool_with_argmax runs on the CPU not GPU so is a little slower.
+3. Tensorflow does not provide a CPU version of max_pool_with_argmax, so if you don't have a GPU you are stuck using the maxpool version.
+4. Tensorflow forgot to include a function for gradients for maxpoolwithargmax, so it is included at the bottom of train.py
+5. The name mangling of the Sunnybrook CMR data.
 
 ## License
 SegNetCMR: MIT license
