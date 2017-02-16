@@ -4,7 +4,7 @@ import tensorflow as tf
 
 import SegNetCMR as sn
 
-HAVE_GPU = False
+HAVE_GPU = True
 SAVE_INTERVAL = 2
 
 TRAINING_DIR = './Data/Training'

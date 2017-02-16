@@ -4,8 +4,6 @@ import tensorflow as tf
 from tensorflow.python.ops import gen_nn_ops
 from tensorflow.python.framework import ops
 
-
-
 def make_conv2d_layer(input, conv_size, output_layers, is_training=True, scope=None, batch_norm_decay_rate=0.99):
     with tf.variable_scope(scope, 'conv'):
         input_layers = input.get_shape().as_list()[3]
@@ -39,7 +37,7 @@ def unpool(value, name='unpool'):
         dim = len(sh[1:-1])
         out = (tf.reshape(value, [-1] + sh[-dim:]))
         for i in range(dim, 0, -1):
-            out = tf.concat(i, [out, tf.zeros_like(out)])
+            out = tf.concat(values=[out, tf.zeros_like(out)], axis=i)
         out_size = [-1] + [s * 2 for s in sh[1:-1]] + [sh[-1]]
         out = tf.reshape(out, out_size, name=scope)
     return out
@@ -73,13 +71,14 @@ def unpool_with_argmax(updates, mask, ksize=[1, 2, 2, 1]):
 ######
 #As there is not a version of max_pool_with_args available for CPU you need an unpool that doesn't need it
 ######
-
-
-@ops.RegisterGradient("MaxPoolWithArgmax")
-def _MaxPoolGradWithArgmax(op, grad, unused_argmax_grad):
-    return gen_nn_ops._max_pool_grad_with_argmax(op.inputs[0],
-                                                 grad,
-                                                 op.outputs[1],
-                                                 op.get_attr("ksize"),
-                                                 op.get_attr("strides"),
-                                                 padding=op.get_attr("padding"))
+#
+#
+# @ops.RegisterGradient("MaxPoolWithArgmax")
+# def _MaxPoolGradWithArgmax(op, grad, unused_argmax_grad):
+#     return gen_nn_ops._max_pool_grad_with_argmax(op.inputs[0],
+#                                                  grad,
+#                                                  op.outputs[1],
+#                                                  op.get_attr("ksize"),
+#                                                  op.get_attr("strides"),
+#                                                  padding=op.get_attr("padding"))
+#
