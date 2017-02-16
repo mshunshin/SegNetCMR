@@ -4,7 +4,7 @@ import tensorflow as tf
 
 import SegNetCMR as sn
 
-HAVE_GPU = True
+HAVE_GPU = False
 SAVE_INTERVAL = 2
 
 TRAINING_DIR = './Data/Training'
@@ -35,7 +35,7 @@ def main():
 
         images, labels, is_training = sn.placeholder_inputs(batch_size=BATCH_SIZE)
 
-        logits = sn.inference(images=images, is_training=is_training, conv_size=CONV_SIZE, batch_norm_decay_rate=BATCH_NORM_DECAY_RATE)
+        logits = sn.inference(images=images, is_training=is_training, conv_size=CONV_SIZE, batch_norm_decay_rate=BATCH_NORM_DECAY_RATE, have_gpu=HAVE_GPU)
 
         sn.add_output_images(images=images, logits=logits, labels=labels)
 
