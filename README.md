@@ -62,7 +62,7 @@ The first two sets of CMRs are included as training data, the last set as test d
 3. Tensorflow does not provide a CPU version of max_pool_with_argmax, so if you don't have a GPU you can't run this.
 4. Tensorflow forgot to include a function for gradients for maxpoolwithargmax, so it is included at the bottom of train.py
 5. The name mangling of the Sunnybrook CMR data - I have fixed this and the data is included in the download.
-6. SegNet works better with a version of softmax that is inversely weighted by class frequency. I can't get the weights to work properly with the tensorflow provided version - my private version has some code to do it by hand - but it would be nice if we could get it to work using teh official function.
+6. SegNet works better with a version of softmax that is inversely weighted by class frequency. I can't get the weights to work properly with the tensorflow provided version - my private version has some code to do it by hand - but it would be nice if we could get it to work using the official function.
 
 ## License
 SegNetCMR: MIT license
