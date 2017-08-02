@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+
 def training(loss, learning_rate):
 
     global_step = tf.Variable(0, name='global_step', trainable=False)

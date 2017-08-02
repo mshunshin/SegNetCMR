@@ -1,49 +1,53 @@
 import os
 
 import tensorflow as tf
+import tensorflow.contrib.slim as slim
 
-import SegNetCMR as sn
+import SegNetCMR
 
-HAVE_GPU = False
-SAVE_INTERVAL = 2
 
-TRAINING_DIR = './Data/Training'
-TEST_DIR = './Data/Test'
+WORKING_DIR = os.getcwd()
+TRAINING_DIR = os.path.join(WORKING_DIR, 'Data', 'Training')
+TEST_DIR = os.path.join(WORKING_DIR, 'Data', 'Test')
 
+ROOT_LOG_DIR = os.path.join(WORKING_DIR, 'Output')
 RUN_NAME = "Run3x3"
-CONV_SIZE = 3
-
-ROOT_LOG_DIR = './Output'
-CHECKPOINT_FN = 'model.ckpt'
-
-#Start off at 0.9, then increase.
-BATCH_NORM_DECAY_RATE = 0.9
-
-MAX_STEPS = 20000
-BATCH_SIZE = 6
-
 LOG_DIR = os.path.join(ROOT_LOG_DIR, RUN_NAME)
+TRAIN_WRITER_DIR = os.path.join(LOG_DIR, 'Train')
+TEST_WRITER_DIR = os.path.join(LOG_DIR, 'Test')
+
+CHECKPOINT_FN = 'model.ckpt'
 CHECKPOINT_FL = os.path.join(LOG_DIR, CHECKPOINT_FN)
 
+
+BATCH_NORM_DECAY = 0.95 #Start off at 0.9, then increase.
+MAX_STEPS = 20000
+BATCH_SIZE = 6
+SAVE_INTERVAL = 50
+
+
 def main():
-    training_data = sn.GetData(TRAINING_DIR)
-    test_data = sn.GetData(TEST_DIR)
+    training_data = SegNetCMR.GetData(TRAINING_DIR)
+    test_data = SegNetCMR.GetData(TEST_DIR)
 
     g = tf.Graph()
 
     with g.as_default():
 
-        images, labels, is_training = sn.placeholder_inputs(batch_size=BATCH_SIZE)
+        images, labels, is_training = SegNetCMR.placeholder_inputs(batch_size=BATCH_SIZE)
 
-        logits = sn.inference(images=images, is_training=is_training, conv_size=CONV_SIZE, batch_norm_decay_rate=BATCH_NORM_DECAY_RATE, have_gpu=HAVE_GPU)
+        arg_scope = SegNetCMR.inference_scope(is_training=True, batch_norm_decay=BATCH_NORM_DECAY)
 
-        sn.add_output_images(images=images, logits=logits, labels=labels)
+        with slim.arg_scope(arg_scope):
+            logits = SegNetCMR.inference(images, class_inc_bg=2)
 
-        loss = sn.loss_calc(logits=logits, labels=labels)
+        SegNetCMR.add_output_images(images=images, logits=logits, labels=labels)
 
-        train_op, global_step = sn.training(loss=loss, learning_rate=1e-04)
+        loss = SegNetCMR.loss_calc(logits=logits, labels=labels)
 
-        accuracy = sn.evaluation(logits=logits, labels=labels)
+        train_op, global_step = SegNetCMR.training(loss=loss, learning_rate=1e-04)
+
+        accuracy = SegNetCMR.evaluation(logits=logits, labels=labels)
 
         summary = tf.summary.merge_all()
 
@@ -57,8 +61,8 @@ def main():
 
             sess.run(tf.variables_initializer([x for x in tf.global_variables() if 'Adam' in x.name]))
 
-            train_writer = tf.summary.FileWriter(LOG_DIR + "/Train", sess.graph)
-            test_writer = tf.summary.FileWriter(LOG_DIR + "/Test")
+            train_writer = tf.summary.FileWriter(TRAIN_WRITER_DIR, sess.graph)
+            test_writer = tf.summary.FileWriter(TEST_WRITER_DIR)
 
             global_step_value, = sess.run([global_step])
 
