@@ -6,8 +6,9 @@ A [Tensorflow](https://www.tensorflow.org/) implementation of [SegNet](https://m
 2. Provide an ready-to-go example of medical segmentation with sufficient training and validation data, in a usable format (PNGs).
 
 ## Requirements
-1. Python 3.5: Best to use the [Conda](https://www.continuum.io/downloads) distribution
-2. Tensorflow 0.12
+You must have a GPU and install the tensorflow-gpu version as the cpu version does not have tf.nn.max_pool_with_argmax()
+1. Python >=3.6: Best to use the [Conda](https://www.continuum.io/downloads) distribution
+2. tensorflow-gpu >=0.11
 
 ## Todo
 1. Add code to run on your own data (currently there is only the training code present)
@@ -16,13 +17,13 @@ A [Tensorflow](https://www.tensorflow.org/) implementation of [SegNet](https://m
 Make sure you have conda and tensorflow installed
 
 ```commandline
-conda install tensorflow
+conda install tensorflow-gpu
 python
-Python 3.5.2 | packaged by conda-forge | (default, Sep  8 2016, 14:36:38)
+Python 3.6.1 | packaged by conda-forge | (default, Sep  8 2016, 14:36:38)
 ```
 The git clone this repository
 ```commandline
-git clone https://
+git clone https://github.com/mshunshin/SegNetCMR.git
 ```
 
 And start the training from the folder
