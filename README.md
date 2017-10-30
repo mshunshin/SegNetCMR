@@ -1,6 +1,11 @@
 # SegNetCMR
 A [Tensorflow](https://www.tensorflow.org/) implementation of [SegNet](https://mi.eng.cam.ac.uk/projects/segnet/) to segments CMR images
 
+## NEW RELEASE
+1. Switched to using the [SELU](https://arxiv.org/abs/1706.02515) activation function - no more batch norm and is_training hassle - a self-normalising neural network!!!!
+2. To support the above - input images are rescaled from -1 to 1: (2/255.0) * image - 1.
+3. Now updates the results more often and saves the checkpoint less often - this is faster. Also, doesn't flush the results after every write.
+
 ## Aims
 1. A demonstration of a more complete Tensorflow program including saving state and resuming.
 2. Provide an ready-to-go example of medical segmentation with sufficient training and validation data, in a usable format (PNGs).
@@ -62,7 +67,8 @@ The first two sets of CMRs are included as training data, the last set as test d
 3. Tensorflow does not provide a CPU version of max_pool_with_argmax, so if you don't have a GPU you can't run this.
 4. Tensorflow forgot to include a function for gradients for maxpoolwithargmax, so it is included at the bottom of train.py
 5. The name mangling of the Sunnybrook CMR data - I have fixed this and the data is included in the download.
-6. SegNet works better with a version of softmax that is inversely weighted by class frequency. I can't get the weights to work properly with the tensorflow provided version - my private version has some code to do it by hand - but it would be nice if we could get it to work using the official function.
+6. SegNet works better with a version of softmax that is inversely weighted by class frequency.
+7. Now using SELU as the activation funciton - this allows us to get rid of the Batch Norm (and the associated is_training hassle).
 
 ## License
 SegNetCMR: MIT license

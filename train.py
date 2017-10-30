@@ -1,108 +1,123 @@
 import os
 
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
 
-import SegNetCMR
+import tfmodel
 
+DATA_NAME = 'Data'
+TRAIN_SOURCE = "Train"
+TEST_SOURCE = 'Test'
+RUN_NAME = "SELU_Run02"
+OUTPUT_NAME = 'Output'
+CHECKPOINT_FN = 'model.ckpt'
 
 WORKING_DIR = os.getcwd()
-TRAINING_DIR = os.path.join(WORKING_DIR, 'Data', 'Training')
-TEST_DIR = os.path.join(WORKING_DIR, 'Data', 'Test')
 
-ROOT_LOG_DIR = os.path.join(WORKING_DIR, 'Output')
-RUN_NAME = "Run3x3"
+TRAIN_DATA_DIR = os.path.join(WORKING_DIR, DATA_NAME, TRAIN_SOURCE)
+TEST_DATA_DIR = os.path.join(WORKING_DIR, DATA_NAME, TEST_SOURCE)
+
+ROOT_LOG_DIR = os.path.join(WORKING_DIR, OUTPUT_NAME)
 LOG_DIR = os.path.join(ROOT_LOG_DIR, RUN_NAME)
-TRAIN_WRITER_DIR = os.path.join(LOG_DIR, 'Train')
-TEST_WRITER_DIR = os.path.join(LOG_DIR, 'Test')
-
-CHECKPOINT_FN = 'model.ckpt'
 CHECKPOINT_FL = os.path.join(LOG_DIR, CHECKPOINT_FN)
 
+TRAIN_WRITER_DIR = os.path.join(LOG_DIR, TRAIN_SOURCE)
+TEST_WRITER_DIR = os.path.join(LOG_DIR, TEST_SOURCE)
 
-BATCH_NORM_DECAY = 0.95 #Start off at 0.9, then increase.
-MAX_STEPS = 20000
+NUM_EPOCHS = 10
+MAX_STEP = 1000
 BATCH_SIZE = 6
-SAVE_INTERVAL = 50
+
+LEARNING_RATE = 1e-04
+
+SAVE_RESULTS_INTERVAL = 5
+SAVE_CHECKPOINT_INTERVAL = 100
 
 
 def main():
-    training_data = SegNetCMR.GetData(TRAINING_DIR)
-    test_data = SegNetCMR.GetData(TEST_DIR)
+    train_data = tfmodel.GetData(TRAIN_DATA_DIR)
+    test_data = tfmodel.GetData(TEST_DATA_DIR)
 
     g = tf.Graph()
 
     with g.as_default():
 
-        images, labels, is_training = SegNetCMR.placeholder_inputs(batch_size=BATCH_SIZE)
+        images, labels = tfmodel.placeholder_inputs(batch_size=BATCH_SIZE)
 
-        arg_scope = SegNetCMR.inference_scope(is_training=True, batch_norm_decay=BATCH_NORM_DECAY)
+        logits, softmax_logits = tfmodel.inference(images, class_inc_bg=2)
 
-        with slim.arg_scope(arg_scope):
-            logits = SegNetCMR.inference(images, class_inc_bg=2)
+        tfmodel.add_output_images(images=images, logits=logits, labels=labels)
 
-        SegNetCMR.add_output_images(images=images, logits=logits, labels=labels)
+        loss = tfmodel.loss_calc(logits=logits, labels=labels)
 
-        loss = SegNetCMR.loss_calc(logits=logits, labels=labels)
+        global_step = tf.Variable(0, name='global_step', trainable=False)
 
-        train_op, global_step = SegNetCMR.training(loss=loss, learning_rate=1e-04)
+        train_op = tfmodel.training(loss=loss, learning_rate=1e-04, global_step=global_step)
 
-        accuracy = SegNetCMR.evaluation(logits=logits, labels=labels)
+        accuracy = tfmodel.evaluation(logits=logits, labels=labels)
 
         summary = tf.summary.merge_all()
 
         init = tf.global_variables_initializer()
 
-        saver = tf.train.Saver([x for x in tf.global_variables() if 'Adam' not in x.name])
+        saver = tf.train.Saver(tf.global_variables())
 
-        sm = tf.train.SessionManager()
+    sm = tf.train.SessionManager(graph=g)
 
-        with sm.prepare_session("", init_op=init, saver=saver, checkpoint_dir=LOG_DIR) as sess:
+    with sm.prepare_session("", init_op=init, saver=saver, checkpoint_dir=LOG_DIR) as sess:
 
-            sess.run(tf.variables_initializer([x for x in tf.global_variables() if 'Adam' in x.name]))
+        sess.run(tf.local_variables_initializer())
 
-            train_writer = tf.summary.FileWriter(TRAIN_WRITER_DIR, sess.graph)
-            test_writer = tf.summary.FileWriter(TEST_WRITER_DIR)
+        train_writer = tf.summary.FileWriter(TRAIN_WRITER_DIR, sess.graph)
+        test_writer = tf.summary.FileWriter(TEST_WRITER_DIR)
 
-            global_step_value, = sess.run([global_step])
+        global_step_value, = sess.run([global_step])
 
-            print("Last trained iteration was: ", global_step_value)
+        print("Last trained iteration was: ", global_step_value)
 
-            for step in range(global_step_value+1, global_step_value+MAX_STEPS+1):
+        try:
 
-                print("Iteration: ", step)
+            while True:
 
-                images_batch, labels_batch = training_data.next_batch(BATCH_SIZE)
+                images_batch, labels_batch = test_data.next_batch(BATCH_SIZE)
 
-                train_feed_dict = {images: images_batch,
-                                   labels: labels_batch,
-                                   is_training: True}
+                feed_dict = {images: images_batch, labels: labels_batch}
 
-                _, train_loss_value, train_accuracy_value, train_summary_str = sess.run([train_op, loss, accuracy, summary], feed_dict=train_feed_dict)
+                if (global_step_value + 1) % SAVE_RESULTS_INTERVAL == 0:
+                    _, loss_value, accuracy_value, global_step_value, summary_str = sess.run([train_op, loss, accuracy, global_step, summary], feed_dict=feed_dict)
+                    train_writer.add_summary(summary_str, global_step=global_step_value)
+                    print(f"TRAIN Step: {global_step_value}\tLoss: {loss_value}\tAccuracy: {accuracy_value}")
 
-                if step % SAVE_INTERVAL == 0:
 
-                    print("Train Loss: ", train_loss_value)
-                    print("Train accuracy: ", train_accuracy_value)
-                    train_writer.add_summary(train_summary_str, step)
-                    train_writer.flush()
+                    images_batch, labels_batch = train_data.next_batch(BATCH_SIZE)
+                    feed_dict = {images: images_batch, labels: labels_batch}
 
-                    images_batch, labels_batch = test_data.next_batch(BATCH_SIZE)
+                    loss_value, accuracy_value, global_step_value, summary_str = sess.run([loss, accuracy, global_step, summary], feed_dict=feed_dict)
+                    test_writer.add_summary(summary_str, global_step=global_step_value)
+                    print(f"TEST  Step: {global_step_value}\tLoss: {loss_value}\tAccuracy: {accuracy_value}")
 
-                    test_feed_dict = {images: images_batch,
-                                      labels: labels_batch,
-                                      is_training: False}
+                else:
+                    _, loss_value, accuracy_value, global_step_value = sess.run([train_op, loss, accuracy, global_step], feed_dict=feed_dict)
+                    print(f"TRAIN Step: {global_step_value}\tLoss: {loss_value}\tAccuracy: {accuracy_value}")
 
-                    test_loss_value, test_accuracy_value, test_summary_str = sess.run([loss, accuracy, summary], feed_dict=test_feed_dict)
+                if global_step_value % SAVE_CHECKPOINT_INTERVAL == 0:
+                    saver.save(sess, CHECKPOINT_FL, global_step=global_step_value)
+                    print("Checkpoint Saved")
 
-                    print("Test Loss: ", test_loss_value)
-                    print("Test accuracy: ", test_accuracy_value)
-                    test_writer.add_summary(test_summary_str, step)
-                    test_writer.flush()
+                if global_step_value >= MAX_STEP:
+                    print(f"Reached MAX_STEP: {MAX_STEP} at step: {global_step_value}")
+                    break
 
-                    saver.save(sess, CHECKPOINT_FL, global_step=step)
-                    print("Session Saved")
-                    print("================")
+
+        except Exception as e:
+            print('Exception')
+            print(e)
+
+        train_writer.flush()
+        test_writer.flush()
+        saver.save(sess, CHECKPOINT_FL, global_step=global_step_value)
+        print("Checkpoint Saved")
+
+        print("Stopping")
 
 
 if __name__ == '__main__':

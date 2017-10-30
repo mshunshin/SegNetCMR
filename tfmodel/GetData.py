@@ -28,8 +28,14 @@ class GetData():
                     image = scipy.misc.imread(os.path.join(image_root, file))
                     label = scipy.misc.imread(os.path.join(label_root, file))
 
-                    images_list.append(image[...,0][...,None]/255)
-                    labels_list.append((label[...,0]>1).astype(np.int64))
+                    image = image[...,0][...,None]/255
+
+                    label = label[...,0]>1
+                    label = label[...,None]
+                    label = label.astype(np.int64)
+
+                    images_list.append(image)
+                    labels_list.append(label)
                     examples = examples + 1
                 except Exception as e:
                     print(e)
