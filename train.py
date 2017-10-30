@@ -7,7 +7,7 @@ import tfmodel
 DATA_NAME = 'Data'
 TRAIN_SOURCE = "Train"
 TEST_SOURCE = 'Test'
-RUN_NAME = "SELU_Run02"
+RUN_NAME = "SELU_Run03"
 OUTPUT_NAME = 'Output'
 CHECKPOINT_FN = 'model.ckpt'
 
@@ -24,7 +24,7 @@ TRAIN_WRITER_DIR = os.path.join(LOG_DIR, TRAIN_SOURCE)
 TEST_WRITER_DIR = os.path.join(LOG_DIR, TEST_SOURCE)
 
 NUM_EPOCHS = 10
-MAX_STEP = 1000
+MAX_STEP = 2500
 BATCH_SIZE = 6
 
 LEARNING_RATE = 1e-04
@@ -78,6 +78,10 @@ def main():
 
             while True:
 
+                if global_step_value >= MAX_STEP:
+                    print(f"Reached MAX_STEP: {MAX_STEP} at step: {global_step_value}")
+                    break
+
                 images_batch, labels_batch = test_data.next_batch(BATCH_SIZE)
 
                 feed_dict = {images: images_batch, labels: labels_batch}
@@ -102,10 +106,6 @@ def main():
                 if global_step_value % SAVE_CHECKPOINT_INTERVAL == 0:
                     saver.save(sess, CHECKPOINT_FL, global_step=global_step_value)
                     print("Checkpoint Saved")
-
-                if global_step_value >= MAX_STEP:
-                    print(f"Reached MAX_STEP: {MAX_STEP} at step: {global_step_value}")
-                    break
 
 
         except Exception as e:
